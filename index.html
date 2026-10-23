@@ -64,6 +64,15 @@ details{margin:8px 0}summary{cursor:pointer;font-weight:500;color:var(--volt)}
 .auth{max-width:400px;margin:8vh auto}
 .chart{width:100%;height:auto;max-height:200px}
 .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:18px 0}
+    #gd-btn{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:20;border-radius:999px;background:var(--volt);color:var(--volt-ink);border-color:var(--volt);padding:10px 20px}
+#gd-btn:hover{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+#gd{position:fixed;right:16px;bottom:calc(72px + env(safe-area-inset-bottom,0px));z-index:20;width:min(360px,calc(100vw - 32px));max-height:70vh;display:none;flex-direction:column;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+#gd.open{display:flex}
+#gd header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line);font-weight:600}
+#gd-log{flex:1;overflow:auto;padding:12px 16px;display:flex;flex-direction:column;gap:10px}
+.gd-m{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:.95rem}
+.gd-u{align-self:flex-end;background:var(--volt);color:var(--volt-ink);border-color:var(--volt)}
+#gd-q{display:flex;gap:6px;flex-wrap:wrap;padding:10px 16px 14px;border-top:1px solid var(--line);max-height:34vh;overflow:auto}
 </style>
 </head>
 <body>
@@ -96,7 +105,6 @@ const EX=[
 const GROUPS=[...new Set(EX.map(e=>e.g))];
 const SEED=[['Артём К.',640],['Лиза М.',520],['Игорь С.',410],['Даша Н.',290],['Макс В.',150]];
 let S={tab:'w',open:null,target:null,q:'',g:'',mode:'in',err:'',rep:false};
-
 const users=()=>load('fr_users',[]);
 const me=()=>users().find(u=>u.email===load('fr_s',null));
 const WK=()=>load('fr_w_'+me().email,[]);
@@ -107,7 +115,6 @@ const done=w=>w.items.some(has);
 const today=()=>new Date().toISOString().slice(0,10);
 const fmt=d=>{try{return new Date(d).toLocaleDateString('ru-RU',{day:'numeric',month:'long'})}catch(e){return d}};
 const ex=id=>EX.find(e=>e.id==id);
-
 function stats(){
   const w=WK(),dn=w.filter(done),total=w.reduce((a,x)=>a+pts(x),0);
   const items=dn.flatMap(x=>x.items.filter(has));
@@ -122,8 +129,6 @@ function stats(){
     reps:items.reduce((a,i)=>a+(+i.reps||0),0),vol:items.reduce((a,i)=>a+(+i.reps||0)*(+i.weight||0),0),
     time:items.reduce((a,i)=>a+(+i.time||0),0),dist:items.reduce((a,i)=>a+(+i.dist||0),0)};
 }
-
-/* ---------- views ---------- */
 function authView(){
   const reg=S.mode==='up';
   return `<main class="auth wrap"><div class="logo" style="margin-bottom:18px"><i></i>Форма роста</div>
@@ -185,13 +190,11 @@ function homeView(){
   <section class="card"><h2>Последние тренировки</h2>${s.dn.slice(-3).reverse().map(w=>`<p><b>${esc(w.name)}</b> <span class="mut">${fmt(w.date)}</span> +${pts(w)} очков</p>`).join('')||'<p class="mut">Пока пусто. Создайте тренировку в кабинете.</p>'}</section>
   </div></main>`;
 }
-
 function cabView(){
   const tabs=[['w','Тренировки'],['e','Упражнения'],['h','История'],['p','Профиль']];
   const body={w:workoutsView,e:exView,h:histView,p:profView}[S.tab]();
   return `<main class="wrap"><h1>Личный кабинет</h1><div class="tabs" role="tablist">${tabs.map(t=>`<button role="tab" aria-selected="${S.tab===t[0]}" class="${S.tab===t[0]?'on':''}" onclick="S.tab='${t[0]}';${t[0]!=='w'?'':'S.open=null;'}render()">${t[1]}</button>`).join('')}</div>${body}</main>`;
 }
-
 function workoutsView(){
   const w=WK();
   if(S.open){
@@ -243,7 +246,6 @@ function addEx(id){
   const wid=+$v('s'+id),w=WK(),x=w.find(a=>a.id===wid);
   x.items.push({ex:id,reps:'',weight:'',time:'',dist:''});setWK(w);S.open=wid;S.target=null;S.tab='w';render();
 }
-
 function histView(){
   const s=stats(),top=Object.entries(s.gr).sort((a,b)=>b[1]-a[1]);
   return `<section class="card"><div class="row"><h2 style="margin:0;flex:1">История тренировок</h2><button onclick="S.rep=!S.rep;render()">${S.rep?'Скрыть отчёт':'Сформировать отчёт'}</button></div>
@@ -252,7 +254,6 @@ function histView(){
   <div style="margin-top:12px">${s.dn.slice().reverse().map(w=>`<div style="padding:12px 0;border-top:1px solid var(--line)"><div class="row"><b>${esc(w.name)}</b><span class="mut">${fmt(w.date)}</span><span class="tag">+${pts(w)} очков</span></div>
   <ul style="margin:6px 0 0;padding-left:20px">${w.items.filter(has).map(i=>`<li>${esc(ex(i.ex).name)}: ${[i.reps&&i.reps+' повт.',i.weight&&i.weight+' кг',i.time&&i.time+' с',i.dist&&i.dist+' м'].filter(Boolean).join(', ')}</li>`).join('')}</ul></div>`).join('')||'<p class="mut">История пуста. Запишите результаты в любой тренировке.</p>'}</div></section>`;
 }
-
 function profView(){
   const u=me();
   return `<section class="card" style="max-width:520px"><h2>Профиль</h2><p class="mut" style="margin:0">${esc(u.email)}</p>
@@ -267,8 +268,6 @@ function saveProf(){
   u.name=$v('pn').trim()||u.name;u.age=$v('pa');u.weight=$v('pw');u.goal=$v('pg').trim();
   save('fr_users',us);document.getElementById('ok').textContent='Изменения сохранены';
 }
-
-/* ---------- router ---------- */
 function render(){
   const app=document.getElementById('app');
   if(!me()){if(location.hash!=='#auth')history.replaceState(null,'','#auth');app.innerHTML=authView();return}
@@ -276,6 +275,55 @@ function render(){
   app.innerHTML=navView()+(location.hash==='#cabinet'?cabView():homeView());
 }
 addEventListener('hashchange',render);
+(function(){
+const A={
+'Как начать?':['1. Зарегистрируйтесь или войдите.','2. Откройте «Кабинет» и создайте тренировку.','3. На вкладке «Упражнения» добавьте упражнения в тренировку.','4. Впишите результаты и вернитесь на главную, чтобы увидеть очки.'],
+'Как считаются очки?':'За упражнение с результатом даётся 10 очков, плюс 1 за каждое повторение, 1 за каждую минуту и 1 за каждые 100 м. Каждые 100 очков дают новый уровень.',
+'Как добавить упражнение?':'Откройте «Кабинет», вкладку «Упражнения», найдите нужное по названию или группе мышц, выберите тренировку в списке и нажмите «Добавить в тренировку».',
+'Как работает рейтинг?':'На главной ваши очки сравниваются с другими участниками. Чем больше очков, тем выше место в таблице.',
+'Какие есть достижения?':['Первый шаг: первая тренировка с результатами.','Пятёрка: 5 тренировок.','Сотня: 100 очков.','Универсал: упражнения на 4 группы мышц.','Железо: вес от 50 кг.'],
+'Как посмотреть прогресс?':'Откройте «Кабинет», вкладку «История» и нажмите «Сформировать отчёт». График динамики есть и на главной.'
+};
+const tip=()=>{
+  if(!me())return 'Привет! Я гид по сайту. Зарегистрируйтесь, чтобы начать записывать тренировки.';
+  if(location.hash==='#cabinet')return ({w:'Здесь вы создаёте тренировки. Откройте тренировку, чтобы добавить упражнения и записать результаты.',e:'Найдите упражнение по названию или группе мышц и добавьте его в тренировку.',h:'Здесь история занятий. Нажмите «Сформировать отчёт», чтобы увидеть сводку.',p:'Заполните профиль: возраст, вес и цель.'})[S.tab];
+  return 'Это главная: очки, график, рейтинг и достижения. Запишите результаты тренировки, чтобы набрать очки.';
+};
+const recommend=()=>{
+  if(!me())return 'Сначала войдите в аккаунт, и я подберу упражнения.';
+  const s=stats();
+  if(!s.items.length)return 'Для начала попробуйте: Отжимания, Приседания с собственным весом, Планка.';
+  const g=GROUPS.map(x=>[x,s.gr[x]||0]).sort((a,b)=>a[1]-b[1])[0][0];
+  return 'Меньше всего вы тренировали группу «'+g+'». Попробуйте: '+EX.filter(e=>e.g===g).slice(0,3).map(e=>e.name).join(', ')+'.';
+};
+const btn=document.createElement('button');
+btn.id='gd-btn';btn.textContent='Гид';btn.setAttribute('aria-expanded','false');
+const box=document.createElement('div');
+box.id='gd';box.setAttribute('role','dialog');box.setAttribute('aria-label','Гид по сайту');
+box.innerHTML=`<header><span>Гид по сайту</span><button class='sm' id='gd-x' aria-label='Закрыть'>✕</button></header><div id='gd-log'></div><div id='gd-q'></div>`;
+document.body.append(btn,box);
+const log=box.querySelector('#gd-log'),qs=box.querySelector('#gd-q');
+const say=(t,u)=>{
+  const d=document.createElement('div');d.className='gd-m'+(u?' gd-u':'');
+  [].concat(t).forEach((s,i)=>{if(i)d.append(document.createElement('br'));d.append(s)});
+  log.append(d);log.scrollTop=log.scrollHeight;
+};
+const chips={...A,'Что на этой странице?':tip,'Что потренировать?':recommend};
+Object.keys(chips).forEach(k=>{
+  const b=document.createElement('button');b.className='sm';b.textContent=k;
+  b.onclick=()=>{say(k,1);const a=chips[k];say(typeof a==='function'?a():a)};
+  qs.append(b);
+});
+const toggle=o=>{
+  const open=o===undefined?!box.classList.contains('open'):o;
+  box.classList.toggle('open',open);btn.setAttribute('aria-expanded',open);
+  btn.textContent=open?'Закрыть':'Гид';
+  if(open&&!log.children.length)say(tip());
+};
+btn.onclick=()=>toggle();
+box.querySelector('#gd-x').onclick=()=>toggle(false);
+addEventListener('keydown',e=>{if(e.key==='Escape')toggle(false)});
+})();
 render();
 </script>
 </body>
