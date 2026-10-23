@@ -1,0 +1,8 @@
+{
+  "name": "forma-rosta",
+  "version": "1.0.0",
+  "description": "Форма роста: REST API",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=18" }
+}
